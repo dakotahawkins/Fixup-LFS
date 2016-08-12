@@ -51,7 +51,8 @@ main() {
     fi
 
     # cd to the top-level directory
-    local top_level_dir=$(git rev-parse --show-toplevel)
+    local top_level_dir=
+    top_level_dir=$(git rev-parse --show-toplevel)
     if ! [[ $? -eq 0 && -d "$top_level_dir" ]]; then
         error-exit "Unable to find top-level working directory."
     fi
@@ -60,14 +61,16 @@ main() {
     }
 
     # Make sure the repo is in a clean working state
-    local num_modified_files=$(git ls-files -m | wc -l)
+    local num_modified_files=
+    num_modified_files=$(git ls-files -m | wc -l)
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to check for modified files."
     elif ! [[ $num_modified_files -eq 0 ]]; then
         error-exit "Modified files found in repository."
     fi
 
-    local num_staged_files=$(git diff --name-only --cached | wc -l)
+    local num_staged_files=
+    num_staged_files=$(git diff --name-only --cached | wc -l)
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to check for staged files."
     elif ! [[ $num_staged_files -eq 0 ]]; then
@@ -95,7 +98,8 @@ main() {
     echo "Looking for files matching LFS globs..."
 
     # Find .gitattributes files
-    local attr_files=($(git ls-files -- '.gitattributes' '**/.gitattributes'))
+    local attr_files=
+    attr_files=($(git ls-files -- '.gitattributes' '**/.gitattributes'))
     if ! [[ $? -eq 0 ]]; then
         error-exit "Unable to find .gitattribute files."
     fi
@@ -104,7 +108,8 @@ main() {
     # potential LFS files
     local lfs_file_glob_matches=
     for attr_file in "${attr_files[@]}"; do
-        local attr_file_dir=$(dirname $(readlink -f "$attr_file"))
+        local attr_file_dir=
+        attr_file_dir=$(dirname $(readlink -f "$attr_file"))
         if ! [[ $? -eq 0 ]]; then
             error-exit "Unable to get directory containing .gitattribute file."
         fi
@@ -114,7 +119,8 @@ main() {
         }
 
         # Pull out the globs
-        local lfs_file_globs=$(grep 'filter=lfs' .gitattributes | grep 'diff=lfs' | grep 'merge=lfs' | while read line; do eval get-first-arg "$line"; done | sort | uniq)
+        local lfs_file_globs=
+        lfs_file_globs=$(grep 'filter=lfs' .gitattributes | grep 'diff=lfs' | grep 'merge=lfs' | while read line; do eval get-first-arg "$line"; done | sort | uniq)
         if ! [[ $? -eq 0 ]]; then
             popd > /dev/null
             error-exit "Unable to find LFS file globs in .gitattributes file."
@@ -137,7 +143,8 @@ main() {
     echo "Ensuring they have LFS attributes actually set..."
 
     # Files must have filter=lfs...
-    local files_with_lfs_attrs=$(echo "$lfs_file_glob_matches" | sort | uniq | git check-attr --stdin filter | grep 'filter: lfs$' | cut -d : -f 1)
+    local files_with_lfs_attrs=
+    files_with_lfs_attrs=$(echo "$lfs_file_glob_matches" | sort | uniq | git check-attr --stdin filter | grep 'filter: lfs$' | cut -d : -f 1)
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to check files for LFS attributes."
     fi
@@ -167,7 +174,8 @@ main() {
 
     # Diff files actually managed by LFS with files that SHOULD be managed by LFS, resulting in a
     # list of files that should be but aren't.
-    local files_to_fix=$(comm -13 <(git-lfs ls-files | cut -d ' ' -f 3- | sort | uniq) <(echo "$files_with_lfs_attrs"))
+    local files_to_fix=
+    files_to_fix=$(comm -13 <(git-lfs ls-files | cut -d ' ' -f 3- | sort | uniq) <(echo "$files_with_lfs_attrs"))
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to identify files to fix."
     fi
@@ -179,14 +187,16 @@ main() {
     fi
 
     # LFS won't handle empty (0 byte) files, so we can just delete these (I hope!)
-    local empty_files_to_rm=$(echo "$files_to_fix" | while read file_name; do if [[ ! -s "$file_name" ]]; then echo "$file_name"; fi; done)
+    local empty_files_to_rm=
+    empty_files_to_rm=$(echo "$files_to_fix" | while read file_name; do if [[ ! -s "$file_name" ]]; then echo "$file_name"; fi; done)
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to identify empty files to delete."
     fi
     local num_empty_files_to_rm=$(echo -n "$empty_files_to_rm" | wc -l)
 
     # Everything else is a file we need to turn into an LFS file
-    local fat_files_to_lfsify=$(echo "$files_to_fix" | while read file_name; do if [[ -s "$file_name" ]]; then echo "$file_name"; fi; done)
+    local fat_files_to_lfsify=
+    fat_files_to_lfsify=$(echo "$files_to_fix" | while read file_name; do if [[ -s "$file_name" ]]; then echo "$file_name"; fi; done)
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to identify files to fix."
     fi
