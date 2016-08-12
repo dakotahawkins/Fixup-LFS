@@ -220,7 +220,7 @@ main() {
         error-exit "Failed to stage file removal."
     }
     echo "Commiting file removal..."
-    git commit -m "${version}${commit_msg}" > /dev/null || {
+    git commit -m "${commit_msg}" > /dev/null || {
         error-exit "Failed to commit file removal."
     }
 
