@@ -9,7 +9,8 @@ This also exposed an oddity that might ALMOST be a git-lfs bug: git-lfs won't ha
 Run from inside of a git repo:
 
     Usage: fixup-lfs.sh [OPTION]
-    Fixes non-LFS files that should have been LFS all along.
+    Fixes non-LFS files that should have been in LFS all along.
     
-      -l, --list  Don't fix anything, just list what would be fixed.
-      -h, --help  Display this help and exit.
+      -l, --list    Don't fix anything, just list what would be fixed.
+      -v, --verify  Like --list, but exits with an error if files need to be fixed.
+      -h, --help    Display this help and exit.

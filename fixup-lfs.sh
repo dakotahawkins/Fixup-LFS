@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # MIT License
-# 
+#
 # Copyright (c) 2016 Dakota Hawkins
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,10 +23,11 @@
 # SOFTWARE.
 
 # Usage: fixup-lfs.sh [OPTION]
-# Fixes non-LFS files that should have been LFS all along.
+# Fixes non-LFS files that should have been in LFS all along.
 #
-#   -l, --list  Don't fix anything, just list what would be fixed.
-#   -h, --help  Display this help and exit.
+#   -l, --list    Don't fix anything, just list what would be fixed.
+#   -v, --verify  Like --list, but exits with an error if files need to be fixed.
+#   -h, --help    Display this help and exit.
 
 lfs_temp_dir=
 main() {
@@ -35,12 +36,15 @@ main() {
     fi
 
     local list_only=0
+    local verify_only=0
     if [[ "$#" -eq "1" ]]; then
         if [[ "$1" == "-h" || "$1" == "--help" ]]; then
             display-usage
             exit 0
         elif [[ "$1" == "-l" || "$1" == "--list" ]]; then
             list_only=1
+        elif [[ "$1" == "-v" || "$1" == "--verify" ]]; then
+            verify_only=1
         else
             error-exit "Unrecognized command line arguments."
         fi
@@ -56,7 +60,7 @@ main() {
     }
 
     # Make a temporary folder in the .git directory
-    if ! [[ $list_only -eq 1 ]]; then
+    if ! [[ $list_only -eq 1  || $verify_only -eq 1 ]]; then
         lfs_temp_dir="$(git rev-parse --git-dir)/lfs/fixup-lfs/"
         if ! [[ $? -eq 0 ]]; then
             error-exit "Unable to find .git directory."
@@ -135,9 +139,14 @@ main() {
         error-exit "Failed to check files for LFS attributes."
     fi
 
-    local header_msg="Fix non-LFS files that should have been LFS all along"
+    local header_msg="Fix non-LFS files that should have been in LFS all along"
     local empty_files_msg="Deleted 0 byte LFS candidates:"
     local fat_files_msg="Converted to LFS files:"
+
+    if [[ $list_only -eq 1  || $verify_only -eq 1 ]]; then
+        empty_files_msg="Delete 0 byte LFS candidates:"
+        fat_files_msg="Convert to LFS files:"
+    fi
 
     echo "Comparing against list of files managed by LFS..."
 
@@ -194,6 +203,8 @@ main() {
 
     if [[ $list_only -eq 1 ]]; then
         return
+    elif [[ $verify_only -eq 1 ]]; then
+        error-exit "The above files need to be fixed up."
     fi
 
     # Delete the empty files.
@@ -247,10 +258,11 @@ get-first-arg() {
 
 display-usage() {
     echo "Usage: fixup-lfs.sh [OPTION]"
-    echo "Fixes non-LFS files that should have been LFS all along."
+    echo "Fixes non-LFS files that should have been in LFS all along."
     echo
-    echo "  -l, --list  Don't fix anything, just list what would be fixed."
-    echo "  -h, --help  Display this help and exit."
+    echo "  -l, --list    Don't fix anything, just list what would be fixed."
+    echo "  -v, --verify  Like --list, but exits with an error if files need to be fixed."
+    echo "  -h, --help    Display this help and exit."
     echo
 }
 
