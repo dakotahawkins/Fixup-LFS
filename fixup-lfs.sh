@@ -59,6 +59,21 @@ main() {
         error-exit "Failed to cd to top-level working directory."
     }
 
+    # Make sure the repo is in a clean working state
+    local num_modified_files=$(git ls-files -m | wc -l)
+    if ! [[ $? -eq 0 ]]; then
+        error-exit "Failed to check for modified files."
+    elif ! [[ $num_modified_files -eq 0 ]]; then
+        error-exit "Modified files found in repository."
+    fi
+
+    local num_staged_files=$(git diff --name-only --cached | wc -l)
+    if ! [[ $? -eq 0 ]]; then
+        error-exit "Failed to check for staged files."
+    elif ! [[ $num_staged_files -eq 0 ]]; then
+        error-exit "Staged files found in repository."
+    fi
+
     # Make a temporary folder in the .git directory
     if ! [[ $list_only -eq 1  || $verify_only -eq 1 ]]; then
         lfs_temp_dir="$(git rev-parse --git-dir)/lfs/fixup-lfs/"
