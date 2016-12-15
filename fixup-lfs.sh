@@ -127,7 +127,7 @@ main() {
         fi
 
         # Find files matching them
-        lfs_file_glob_matches+=$(echo "$lfs_file_globs" | xargs git ls-files --full-name -- )$'\n'
+        lfs_file_glob_matches+=$(echo "$lfs_file_globs" | xargs -r git ls-files --full-name -- )$'\n'
         if ! [[ $? -eq 0 ]]; then
             popd > /dev/null
             error-exit "Failed to find git files matching LFS file globs."
@@ -232,23 +232,27 @@ main() {
         error-exit "The above files need to be fixed up."
     fi
 
-    # Delete the empty files.
-    echo "Deleting empty files..."
-    echo "$empty_files_to_rm" | tr '\n' '\0' | xargs -0 -I {} rm {} > /dev/null || {
-        error-exit "Failed to remove empty files."
-    }
+    if [[ $num_empty_files -gt 0 ]]; then
+        # Delete the empty files.
+        echo "Deleting empty files..."
+        echo "$empty_files_to_rm" | tr '\n' '\0' | xargs -0 -r -I {} rm {} > /dev/null || {
+            error-exit "Failed to remove empty files."
+        }
+    fi
 
-    # Copy the others to the temporary directory...
-    echo "Copying remaining files to fix into temporary directory..."
-    echo "$fat_files_to_lfsify" | tr '\n' '\0' | xargs -0 -I {} cp --parents -t "$lfs_temp_dir" {} > /dev/null || {
-        error-exit "Failed to copy files to temporary directory."
-    }
+    if [[ $num_fat_files_to_lfsify -gt 0 ]]; then
+        # Copy the others to the temporary directory...
+        echo "Copying remaining files to fix into temporary directory..."
+        echo "$fat_files_to_lfsify" | tr '\n' '\0' | xargs -0 -r -I {} cp --parents -t "$lfs_temp_dir" {} > /dev/null || {
+            error-exit "Failed to copy files to temporary directory."
+        }
 
-    # ...and then delete them.
-    echo "Removing files..."
-    echo "$fat_files_to_lfsify" | tr '\n' '\0' | xargs -0 -I {} rm {} > /dev/null || {
-        error-exit "Failed to remove files."
-    }
+        # ...and then delete them.
+        echo "Removing files..."
+        echo "$fat_files_to_lfsify" | tr '\n' '\0' | xargs -0 -r -I {} rm {} > /dev/null || {
+            error-exit "Failed to remove files."
+        }
+    fi
 
     # Add and commit the file removals.
     echo "Staging file removal..."
@@ -260,19 +264,21 @@ main() {
         error-exit "Failed to commit file removal."
     }
 
-    # Bring back the files from the temporary directory, re-add them and amend our commit.
-    echo "Copying files back from temporary directory..."
-    cp -r "${lfs_temp_dir}." "./" > /dev/null || {
-        error-exit "Failed to copy files from temporary directory."
-    }
-    echo "Re-adding files..."
-    git -c core.autocrlf=input add -f -A > /dev/null || {
-        error-exit "Failed to stage file re-addition."
-    }
-    echo "Amending commit..."
-    git commit --amend || {
-        error-exit "Failed to commit file re-addition."
-    }
+    if [[ $num_fat_files_to_lfsify -gt 0 ]]; then
+        # Bring back the files from the temporary directory, re-add them and amend our commit.
+        echo "Copying files back from temporary directory..."
+        cp -r "${lfs_temp_dir}." "./" > /dev/null || {
+            error-exit "Failed to copy files from temporary directory."
+        }
+        echo "Re-adding files..."
+        git -c core.autocrlf=input add -f -A > /dev/null || {
+            error-exit "Failed to stage file re-addition."
+        }
+        echo "Amending commit..."
+        git commit --amend || {
+            error-exit "Failed to commit file re-addition."
+        }
+    fi
 
     echo "Done!"
 }
