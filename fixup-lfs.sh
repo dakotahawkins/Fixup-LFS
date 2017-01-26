@@ -179,7 +179,7 @@ main() {
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to identify files to fix."
     fi
-    local num_files_to_fix=$(echo -n "$files_to_fix" | wc -l)
+    local num_files_to_fix=$(echo "$files_to_fix" | sed '/^\s*$/d' | wc -l)
     if [[ $num_files_to_fix -eq 0 ]]; then
         echo
         echo "Nothing to do!"
@@ -192,7 +192,7 @@ main() {
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to identify empty files to delete."
     fi
-    local num_empty_files_to_rm=$(echo -n "$empty_files_to_rm" | wc -l)
+    local num_empty_files_to_rm=$(echo "$empty_files_to_rm" | sed '/^\s*$/d' | wc -l)
 
     # Everything else is a file we need to turn into an LFS file
     local fat_files_to_lfsify=
@@ -200,7 +200,7 @@ main() {
     if ! [[ $? -eq 0 ]]; then
         error-exit "Failed to identify files to fix."
     fi
-    local num_fat_files_to_lfsify=$(echo -n "$fat_files_to_lfsify" | wc -l)
+    local num_fat_files_to_lfsify=$(echo "$fat_files_to_lfsify" | sed '/^\s*$/d' | wc -l)
 
     local commit_msg=$(
         echo "$header_msg"
