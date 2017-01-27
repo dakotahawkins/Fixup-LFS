@@ -120,11 +120,14 @@ main() {
 
         # Pull out the globs
         local lfs_file_globs=
-        lfs_file_globs=$(grep 'filter=lfs' .gitattributes | grep 'diff=lfs' | grep 'merge=lfs' | while read line; do eval get-first-arg "$line"; done | sort | uniq)
+        set -f
+        lfs_file_globs=$(grep 'filter=lfs' "$attr_file_dir/.gitattributes" | grep 'diff=lfs' | grep 'merge=lfs' | while read line; do eval get-first-arg "$line"; done | sort | uniq)
         if ! [[ $? -eq 0 ]]; then
+            set +f
             popd > /dev/null
             error-exit "Unable to find LFS file globs in .gitattributes file."
         fi
+        set +f
 
         # Find files matching them
         lfs_file_glob_matches+=$(echo "$lfs_file_globs" | xargs -r git ls-files --full-name -- )$'\n'
